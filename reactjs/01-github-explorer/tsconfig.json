@@ -6,7 +6,7 @@
       "esnext"
     ],
     "allowJs": true,
-    "jsx": "react-jsx",
+    "jsx": "preserve",
     "noEmit": true,
     "strict": true,
     "moduleResolution": "node",
