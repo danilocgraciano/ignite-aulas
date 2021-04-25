@@ -2,11 +2,15 @@ import { Box, Flex, Heading, Divider, VStack, SimpleGrid, HStack, Button } from 
 import { SubmitHandler, useForm } from 'react-hook-form';
 import * as yup from "yup";
 import { yupResolver } from "@hookform/resolvers/yup";
+import { useMutation } from 'react-query';
 
 import { Header } from '../../components/Header';
 import { Sidebar } from '../../components/Sidebar';
 import { Input } from '../../components/Form/Input';
 import Link from 'next/link';
+import { api } from '../../services/api';
+import { queryClient } from '../../services/queryClient';
+import { useRouter } from 'next/router';
 
 type UserFormData = {
     name: string;
@@ -28,15 +32,31 @@ const userFormSchema = yup.object().shape({
 
 export default function UserForm() {
 
+    const router = useRouter();
+
+    const createUser = useMutation(async (user: UserFormData) => {
+        const response = await api.post('users', {
+            user: {
+                ...user,
+                created_at: new Date(),
+            }
+        });
+
+        return response.data.user;
+    }, {
+        onSuccess: () => {
+            queryClient.invalidateQueries('users');
+        }
+    });
+
     const { register, handleSubmit, formState } = useForm({
         resolver: yupResolver(userFormSchema)
     });
 
     const handleUserForm: SubmitHandler<UserFormData> = async (values, event) => {
-        await new Promise(resolve => setTimeout(resolve, 2000));
+        await createUser.mutateAsync(values);
 
-        console.log(values);
-
+        router.push('/users');
     }
 
     return (
@@ -66,25 +86,25 @@ export default function UserForm() {
                                 {...register('name')}
                                 error={formState.errors.name}
                             />
-                            <Input 
-                                name="email" 
-                                type="email" 
+                            <Input
+                                name="email"
+                                type="email"
                                 label="E-mail"
                                 {...register('email')}
                                 error={formState.errors.email}
                             />
                         </SimpleGrid>
                         <SimpleGrid minChildWidth="240px" spacing={["6", "8"]} w="100%">
-                            <Input 
+                            <Input
                                 name="password"
                                 type="password"
                                 label="Senha"
                                 {...register('password')}
                                 error={formState.errors.password}
                             />
-                            <Input 
-                                name="password_confirmation" 
-                                type="password" 
+                            <Input
+                                name="password_confirmation"
+                                type="password"
                                 label="Confirmação da senha"
                                 {...register('password_confirmation')}
                                 error={formState.errors.password_confirmation}
@@ -96,8 +116,8 @@ export default function UserForm() {
                             <Link href="/users">
                                 <Button as="a" colorScheme="whiteAlpha">Cancelar</Button>
                             </Link>
-                            <Button 
-                                type="submit" 
+                            <Button
+                                type="submit"
                                 colorScheme="pink"
                                 isLoading={formState.isSubmitting}
                             >
